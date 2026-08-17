@@ -1,0 +1,20 @@
+{
+  "name": "medical-clinic",
+  "version": "1.0.0",
+  "description": "Medical clinic Salud+: patient sign-up, appointments saved in the backend, and an automatic email reminder one day before.",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "seed": "node src/db/seed.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.8.1",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "nodemailer": "^6.9.16"
+  }
+}

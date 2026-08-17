@@ -1,0 +1,17 @@
+# Render blueprint for the medical clinic (English version).
+services:
+  - type: web
+    name: medical-clinic
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_SECRET
+        generateValue: true
+      - key: TRUST_PROXY
+        value: "true"
+      - key: PUBLIC_URL
+        sync: false
