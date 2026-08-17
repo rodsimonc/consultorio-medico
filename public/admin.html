@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Recepción · Consultorio Salud+</title>
+<style>
+  :root{--bg:#eef3fb;--card:#fff;--ink:#1e2635;--muted:#6b7688;--line:#e2e7f0;--accent:#1f6feb;--accent2:#175bc0;--green:#2f8f5b;--red:#c0392b;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+  *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.5}
+  a{color:var(--accent)} .wrap{max-width:1000px;margin:0 auto;padding:0 20px}
+  .btn{background:var(--accent);color:#fff;border:none;border-radius:9px;padding:9px 15px;font:inherit;font-weight:600;font-size:.88rem;cursor:pointer}
+  .btn:hover{background:var(--accent2)} .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line);font-weight:500}
+  .btn.sm{padding:6px 10px;font-size:.82rem}
+  label{display:block;font-size:.8rem;color:var(--muted);margin:10px 0 4px}
+  input,select{width:100%;border:1px solid var(--line);border-radius:9px;padding:9px 11px;font:inherit;font-size:.9rem;background:#fff}
+  .msg{font-size:.86rem;margin-top:10px;min-height:1.1em} .msg.ok{color:var(--green)} .msg.err{color:var(--red)}
+  .field-err{color:var(--red);font-size:.78rem;margin-top:3px;min-height:.9em}
+  .login{max-width:400px;margin:8vh auto;background:#fff;border:1px solid var(--line);border-radius:16px;padding:30px}
+  .login h1{font-size:1.25rem;margin:0 0 4px} .login p{color:var(--muted);margin:0 0 16px;font-size:.92rem}
+  .top{background:#fff;border-bottom:1px solid var(--line)} .top .in{display:flex;align-items:center;justify-content:space-between;height:56px}
+  .top .brand{font-weight:700} main{padding:24px 0 70px}
+  .tabs{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+  .tab{background:#fff;border:1px solid var(--line);border-radius:999px;padding:8px 15px;font-size:.86rem;cursor:pointer;color:var(--muted)}
+  .tab.active{background:var(--ink);color:#fff;border-color:var(--ink)} .panel{display:none} .panel.active{display:block}
+  .head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px} .head h2{font-size:1.15rem;margin:0}
+  table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  th,td{padding:9px 11px;text-align:left;border-bottom:1px solid var(--line);font-size:.88rem;vertical-align:middle} th{background:#f6f9fe;color:var(--muted);font-size:.78rem;text-transform:uppercase}
+  tr:last-child td{border-bottom:none} .empty{color:var(--muted);background:#fff;border:1px dashed var(--line);border-radius:12px;padding:24px;text-align:center}
+  .chip{display:inline-block;font-size:.72rem;padding:2px 9px;border-radius:999px;border:1px solid var(--line)}
+  .chip.solicitado{color:#b6791f;background:#fdf4e3}.chip.confirmado{color:var(--green);background:#eafaf0}.chip.cancelado{color:var(--red);background:#fdecec}.chip.atendido{color:#2563eb;background:#eef4ff}.chip.ausente{color:#7c3aed;background:#f3ecff}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px} @media(max-width:560px){.row2{grid-template-columns:1fr}}
+  .box{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+</style>
+</head>
+<body>
+<div id="loginView"><div class="login">
+  <div id="setupCard" style="display:none">
+    <h1>Configurá la recepción</h1><p>Primera vez: creá la cuenta de administrador del consultorio.</p>
+    <label>Nombre</label><input id="suNombre" value="Recepción">
+    <label>Email</label><input id="suEmail" type="email"><div class="field-err" data-for="email"></div>
+    <label>Contraseña</label><input id="suPass" type="password" placeholder="mín. 8, con letras y números"><div class="field-err" data-for="password"></div>
+    <button class="btn" style="width:100%;margin-top:16px" onclick="registerAdmin()">Crear cuenta</button>
+    <div class="msg" id="setupMsg"></div>
+  </div>
+  <div id="loginCard" style="display:none">
+    <h1>Panel de recepción</h1><p>Ingresá con tu cuenta de administrador.</p>
+    <label>Email</label><input id="email" type="email"><label>Contraseña</label><input id="password" type="password">
+    <button class="btn" style="width:100%;margin-top:16px" onclick="login()">Ingresar</button><div class="msg" id="loginMsg"></div>
+  </div>
+  <p style="margin-top:16px;font-size:.85rem"><a href="/">← Ir a la tienda de turnos</a></p>
+</div></div>
+
+<div id="appView" style="display:none">
+  <div class="top"><div class="wrap in"><span class="brand">🩺 Recepción · Salud+</span>
+    <div><a href="/" target="_blank" style="margin-right:12px;font-size:.9rem">Ver sitio ↗</a><button class="btn ghost sm" onclick="logout()">Salir</button></div></div></div>
+  <main class="wrap">
+    <div class="tabs">
+      <div class="tab active" data-tab="turnos" onclick="switchTab('turnos')">Turnos</div>
+      <div class="tab" data-tab="medicos" onclick="switchTab('medicos')">Médicos</div>
+      <div class="tab" data-tab="especialidades" onclick="switchTab('especialidades')">Especialidades</div>
+    </div>
+
+    <div class="panel active" id="panel-turnos">
+      <div class="head"><h2>Turnos</h2><button class="btn ghost sm" onclick="loadTurnos()">Actualizar</button></div>
+      <div id="turnosWrap"><p class="empty">Cargando…</p></div>
+    </div>
+
+    <div class="panel" id="panel-medicos">
+      <div class="head"><h2>Médicos y agenda</h2></div>
+      <div class="box">
+        <strong>Nuevo médico</strong>
+        <div class="row2">
+          <div><label>Nombre</label><input id="mNombre"></div>
+          <div><label>Apellido</label><input id="mApellido"></div>
+        </div>
+        <div class="row2">
+          <div><label>Especialidad</label><select id="mEsp"></select></div>
+          <div><label>Matrícula</label><input id="mMat"></div>
+        </div>
+        <strong style="display:block;margin-top:12px">Agenda (aplica lunes a viernes)</strong>
+        <div class="row2">
+          <div><label>Desde</label><input id="mDesde" type="time" value="09:00"></div>
+          <div><label>Hasta</label><input id="mHasta" type="time" value="13:00"></div>
+        </div>
+        <label>Duración del turno (min)</label><input id="mDur" type="number" value="30" min="10" step="5">
+        <button class="btn" style="margin-top:12px" onclick="crearMedico()">Agregar médico + agenda</button>
+        <div class="msg" id="medMsg"></div>
+      </div>
+      <div id="medicosWrap"><p class="empty">Cargando…</p></div>
+    </div>
+
+    <div class="panel" id="panel-especialidades">
+      <div class="head"><h2>Especialidades</h2></div>
+      <div class="box">
+        <div class="row2">
+          <div><label>Nombre</label><input id="eNombre"></div>
+          <div><label>Descripción (opcional)</label><input id="eDesc"></div>
+        </div>
+        <button class="btn" style="margin-top:12px" onclick="crearEsp()">Agregar especialidad</button>
+        <div class="msg" id="espMsg"></div>
+      </div>
+      <div id="espWrap"><p class="empty">Cargando…</p></div>
+    </div>
+  </main>
+</div>
+
+<script>
+  const API='/api/v1'; let token=null;
+  async function checkSetup(){ try{ const {needsSetup}=await (await fetch(`${API}/auth/setup-status`)).json();
+    document.getElementById('setupCard').style.display=needsSetup?'block':'none'; document.getElementById('loginCard').style.display=needsSetup?'none':'block';
+  }catch(e){ document.getElementById('loginCard').style.display='block'; } }
+  function enterApp(){ document.getElementById('loginView').style.display='none'; document.getElementById('appView').style.display='block'; loadTurnos(); loadMedicos(); loadEsp(); }
+  async function registerAdmin(){ clearErr(); const msg=document.getElementById('setupMsg'); msg.className='msg'; msg.textContent='Creando…';
+    try{ const res=await fetch(`${API}/auth/register-admin`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:val('suEmail'),password:val('suPass'),nombre:val('suNombre')})});
+      const d=await res.json().catch(()=>({})); if(res.status===201&&d.accessToken){token=d.accessToken;enterApp();}
+      else if(res.status===422&&d.errors){d.errors.forEach(e=>showErr(e.field,e.message));msg.className='msg err';msg.textContent='Revisá los campos.';}
+      else{msg.className='msg err';msg.textContent=d.detail||'No se pudo crear.';}
+    }catch(e){msg.className='msg err';msg.textContent='No se pudo conectar.';} }
+  async function login(){ const msg=document.getElementById('loginMsg'); msg.className='msg'; msg.textContent='Ingresando…';
+    try{ const res=await fetch(`${API}/auth/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:val('email'),password:val('password')})});
+      const d=await res.json(); if(res.status===200&&d.accessToken){ if(d.user.role!=='admin'){msg.className='msg err';msg.textContent='Esta cuenta no es de administrador.';return;} token=d.accessToken; enterApp(); }
+      else{msg.className='msg err';msg.textContent=res.status===401?'Credenciales inválidas.':(d.detail||'Error.');}
+    }catch(e){msg.className='msg err';msg.textContent='No se pudo conectar.';} }
+  function logout(){ token=null; document.getElementById('appView').style.display='none'; document.getElementById('loginView').style.display='block'; checkSetup(); }
+  function switchTab(n){ document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.tab===n)); document.querySelectorAll('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+n)); }
+  function auth(j){ const h={'Authorization':'Bearer '+token}; if(j)h['Content-Type']='application/json'; return h; }
+
+  const ESTADOS=['solicitado','confirmado','atendido','ausente','cancelado'];
+  async function loadTurnos(){ const w=document.getElementById('turnosWrap');
+    try{ const list=(await (await fetch(`${API}/turnos?pageSize=100`,{headers:auth()})).json()).data||[];
+      if(!list.length){ w.innerHTML='<p class="empty">Todavía no hay turnos.</p>'; return; }
+      w.innerHTML=`<table><thead><tr><th>Paciente</th><th>Profesional</th><th>Fecha</th><th>Estado</th><th></th></tr></thead><tbody>${
+        list.map(t=>`<tr><td>${esc(t.pacienteNombre)}<br><span style="color:var(--muted);font-size:.8rem">${esc(t.pacienteEmail)}</span></td>
+          <td>${esc(t.medicoNombre)}<br><span style="color:var(--muted);font-size:.8rem">${esc(t.especialidad)}</span></td>
+          <td>${fmt(t.fechaHora)}</td><td><span class="chip ${t.estado}">${t.estado}</span></td>
+          <td><select id="st-${t.id}">${ESTADOS.map(s=>`<option ${s===t.estado?'selected':''}>${s}</option>`).join('')}</select>
+          <button class="btn sm" onclick="setEstado(${t.id})">OK</button></td></tr>`).join('')}</tbody></table>`;
+    }catch(e){ w.innerHTML='<p class="empty">No se pudieron cargar.</p>'; } }
+  async function setEstado(id){ const estado=document.getElementById('st-'+id).value;
+    await fetch(`${API}/turnos/${id}/estado`,{method:'PATCH',headers:auth(true),body:JSON.stringify({estado})}); loadTurnos(); }
+
+  let esps=[];
+  async function loadEsp(){ esps=(await (await fetch(`${API}/especialidades`)).json()).data||[];
+    const sel=document.getElementById('mEsp'); sel.innerHTML=esps.map(e=>`<option value="${e.id}">${esc(e.nombre)}</option>`).join('');
+    document.getElementById('espWrap').innerHTML= esps.length?`<table><thead><tr><th>Especialidad</th></tr></thead><tbody>${esps.map(e=>`<tr><td>${esc(e.nombre)}</td></tr>`).join('')}</tbody></table>`:'<p class="empty">Sin especialidades.</p>'; }
+  async function crearEsp(){ const msg=document.getElementById('espMsg'); msg.className='msg';
+    const res=await fetch(`${API}/especialidades`,{method:'POST',headers:auth(true),body:JSON.stringify({nombre:val('eNombre'),descripcion:val('eDesc')})});
+    if(res.ok){ msg.className='msg ok'; msg.textContent='Agregada.'; document.getElementById('eNombre').value=''; loadEsp(); }
+    else{ const d=await res.json().catch(()=>({})); msg.className='msg err'; msg.textContent=d.detail||'No se pudo.'; } }
+
+  async function loadMedicos(){ const w=document.getElementById('medicosWrap');
+    const list=(await (await fetch(`${API}/medicos`)).json()).data||[];
+    w.innerHTML= list.length?`<table><thead><tr><th>Médico</th><th>Especialidad</th><th>Matrícula</th><th></th></tr></thead><tbody>${
+      list.map(m=>`<tr><td>${esc(m.nombre)} ${esc(m.apellido)}</td><td>${esc(m.especialidad)}</td><td>${esc(m.matricula||'')}</td>
+      <td><button class="btn ghost sm" onclick="borrarMedico(${m.id})">Borrar</button></td></tr>`).join('')}</tbody></table>`:'<p class="empty">Sin médicos.</p>'; }
+  async function crearMedico(){ const msg=document.getElementById('medMsg'); msg.className='msg'; msg.textContent='Creando…';
+    const body={nombre:val('mNombre'),apellido:val('mApellido'),especialidadId:Number(val('mEsp')),matricula:val('mMat')};
+    const res=await fetch(`${API}/medicos`,{method:'POST',headers:auth(true),body:JSON.stringify(body)});
+    const d=await res.json().catch(()=>({}));
+    if(res.status===201){ // set agenda L-V
+      const dur=Number(val('mDur'))||30; const franjas=[1,2,3,4,5].map(dw=>({diaSemana:dw,horaInicio:val('mDesde'),horaFin:val('mHasta'),duracionMin:dur}));
+      await fetch(`${API}/medicos/${d.data.id}/disponibilidad`,{method:'PUT',headers:auth(true),body:JSON.stringify({franjas})});
+      msg.className='msg ok'; msg.textContent='Médico y agenda creados.'; ['mNombre','mApellido','mMat'].forEach(i=>document.getElementById(i).value=''); loadMedicos();
+    } else if(res.status===422&&d.errors){ msg.className='msg err'; msg.textContent=d.errors.map(e=>e.message).join(', '); }
+    else{ msg.className='msg err'; msg.textContent=d.detail||'No se pudo.'; } }
+  async function borrarMedico(id){ if(!confirm('¿Borrar este médico?'))return; await fetch(`${API}/medicos/${id}`,{method:'DELETE',headers:auth()}); loadMedicos(); }
+
+  function val(id){ return document.getElementById(id).value.trim(); }
+  function fmt(iso){ try{ return new Date(iso).toLocaleString('es-AR',{timeZone:'America/Argentina/Buenos_Aires',dateStyle:'medium',timeStyle:'short'}); }catch{return iso;} }
+  function showErr(f,m){ const e=document.querySelector(`.field-err[data-for="${f}"]`); if(e)e.textContent=m; }
+  function clearErr(){ document.querySelectorAll('.field-err').forEach(e=>e.textContent=''); }
+  function esc(s){ return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  checkSetup();
+</script>
+</body>
+</html>

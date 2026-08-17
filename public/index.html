@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Consultorio Salud+ · Turnos online</title>
+<style>
+  :root{--bg:#eef3fb;--card:#fff;--ink:#1e2635;--muted:#6b7688;--line:#e2e7f0;--accent:#1f6feb;--accent2:#175bc0;--green:#2f8f5b;--red:#c0392b;
+    --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55}
+  a{color:var(--accent);text-decoration:none}
+  .wrap{max-width:1000px;margin:0 auto;padding:0 20px}
+  header{background:#fff;border-bottom:1px solid var(--line)}
+  .bar{display:flex;align-items:center;justify-content:space-between;height:62px}
+  .logo{font-weight:700;font-size:1.2rem;color:var(--accent)}
+  .btn{background:var(--accent);color:#fff;border:none;border-radius:9px;padding:9px 15px;font:inherit;font-weight:600;font-size:.88rem;cursor:pointer}
+  .btn:hover{background:var(--accent2)} .btn:disabled{opacity:.5;cursor:default}
+  .btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--line);font-weight:500}
+  .btn.sm{padding:6px 11px;font-size:.82rem}
+  main{display:grid;grid-template-columns:1fr 340px;gap:24px;padding:26px 0 70px}
+  @media(max-width:820px){main{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:18px}
+  h1{font-size:1.5rem;margin:0 0 4px} .lead{color:var(--muted);margin:0 0 18px}
+  h2{font-size:1.05rem;margin:0 0 12px}
+  label{display:block;font-size:.82rem;color:var(--muted);margin:12px 0 5px}
+  input,select,textarea{width:100%;border:1px solid var(--line);border-radius:9px;padding:10px 12px;font:inherit;font-size:.92rem;background:#fff}
+  .step{opacity:.5;pointer-events:none} .step.on{opacity:1;pointer-events:auto}
+  .slots{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+  .slot{border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 12px;cursor:pointer;font-size:.9rem}
+  .slot.sel{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .msg{font-size:.88rem;margin-top:10px;min-height:1.1em}
+  .msg.ok{color:var(--green)} .msg.err{color:var(--red)}
+  .field-err{color:var(--red);font-size:.78rem;margin-top:3px;min-height:.9em}
+  .turno{border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:10px;font-size:.9rem}
+  .chip{display:inline-block;font-size:.72rem;padding:2px 9px;border-radius:999px;border:1px solid var(--line)}
+  .chip.solicitado{color:#b6791f;background:#fdf4e3}.chip.confirmado{color:var(--green);background:#eafaf0}
+  .chip.cancelado{color:var(--red);background:#fdecec}.chip.atendido{color:#2563eb;background:#eef4ff}.chip.ausente{color:#7c3aed;background:#f3ecff}
+  .muted{color:var(--muted)} .empty{color:var(--muted);text-align:center;padding:12px}
+  .overlay{position:fixed;inset:0;background:rgba(20,30,50,.45);display:none;align-items:flex-start;justify-content:center;padding:7vh 16px;z-index:20;overflow:auto}
+  .overlay.open{display:flex}
+  .modal{background:#fff;border-radius:16px;width:100%;max-width:420px;padding:24px}
+  .tabs2{display:flex;gap:8px;margin:12px 0}
+  .tab2{flex:1;text-align:center;padding:8px;border:1px solid var(--line);border-radius:9px;cursor:pointer;color:var(--muted);font-size:.9rem}
+  .tab2.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .foot{color:var(--muted);font-size:.8rem;text-align:center;margin-top:12px}
+</style>
+</head>
+<body>
+<header><div class="wrap bar">
+  <span class="logo">🩺 Consultorio Salud+</span>
+  <div id="nav">
+    <button class="btn ghost sm" onclick="openAuth('login')">Ingresar</button>
+    <button class="btn sm" onclick="openAuth('register')">Crear cuenta</button>
+  </div>
+</div></header>
+
+<main class="wrap">
+  <section>
+    <div class="card">
+      <h1>Pedí tu turno online</h1>
+      <p class="lead">Elegí especialidad, profesional, día y horario. Te enviamos un recordatorio por email un día antes.</p>
+
+      <div class="step on" id="step1">
+        <h2>1 · Especialidad</h2>
+        <select id="especialidad" onchange="onEsp()"><option value="">Elegí una especialidad…</option></select>
+      </div>
+
+      <div class="step" id="step2">
+        <h2>2 · Profesional</h2>
+        <select id="medico" onchange="onMed()"><option value="">Elegí un profesional…</option></select>
+      </div>
+
+      <div class="step" id="step3">
+        <h2>3 · Día</h2>
+        <input type="date" id="fecha" onchange="loadSlots()">
+      </div>
+
+      <div class="step" id="step4">
+        <h2>4 · Horario</h2>
+        <div class="slots" id="slots"><span class="muted">Elegí un día para ver los horarios.</span></div>
+      </div>
+
+      <div id="confirmBox" style="display:none;margin-top:18px">
+        <label>Motivo de la consulta (opcional)</label>
+        <textarea id="motivo" rows="2" placeholder="Ej: control anual"></textarea>
+        <button class="btn" style="margin-top:12px" id="confirmBtn" onclick="pedirTurno()">Confirmar turno</button>
+        <div class="msg" id="turnoMsg"></div>
+        <p class="foot" id="loginHint" style="display:none">Necesitás <a href="#" onclick="openAuth('login');return false">iniciar sesión</a> para confirmar.</p>
+      </div>
+    </div>
+  </section>
+
+  <aside>
+    <div class="card" id="misTurnosCard" style="display:none">
+      <h2>Mis turnos</h2>
+      <div id="misTurnos"><p class="empty">Sin turnos todavía.</p></div>
+    </div>
+    <div class="card">
+      <h2>Cómo funciona</h2>
+      <p class="muted" style="font-size:.9rem">Creás tu cuenta, reservás en 4 pasos y recibís un email un día antes para confirmar o cancelar. ¿Sos del consultorio? <a href="/admin.html">Panel de recepción</a>.</p>
+    </div>
+  </aside>
+</main>
+
+<!-- Auth -->
+<div class="overlay" id="authOverlay"><div class="modal">
+  <h2 id="authTitle">Ingresar</h2>
+  <div class="tabs2">
+    <div class="tab2" data-m="login" onclick="setAuthMode('login')">Ingresar</div>
+    <div class="tab2" data-m="register" onclick="setAuthMode('register')">Crear cuenta</div>
+  </div>
+  <div id="regFields" style="display:none">
+    <label>Nombre</label><input id="auNombre"><div class="field-err" data-for="nombre"></div>
+    <label>Apellido</label><input id="auApellido">
+    <label>Teléfono</label><input id="auTel" type="tel" placeholder="11 2233-4455"><div class="field-err" data-for="telefono"></div>
+    <label>DNI</label><input id="auDni">
+  </div>
+  <label>Email</label><input id="auEmail" type="email" placeholder="nombre@mail.com"><div class="field-err" data-for="email"></div>
+  <label>Contraseña</label><input id="auPass" type="password" placeholder="mín. 8, con letras y números"><div class="field-err" data-for="password"></div>
+  <button class="btn" style="width:100%;margin-top:16px" id="authBtn" onclick="submitAuth()">Ingresar</button>
+  <div class="msg" id="authMsg"></div>
+  <p class="foot"><a href="#" onclick="closeAuth();return false">Cerrar</a></p>
+</div></div>
+
+<script>
+  const API='/api/v1';
+  let token=null, me=null, authMode='login';
+  let sel={ especialidadId:'', medicoId:'', fechaHora:'' };
+
+  // init
+  (async function(){
+    const esp = (await (await fetch(`${API}/especialidades`)).json()).data||[];
+    const s=document.getElementById('especialidad');
+    esp.forEach(e=>{ const o=document.createElement('option');o.value=e.id;o.textContent=e.nombre;s.appendChild(o); });
+    const f=document.getElementById('fecha'); const t=new Date(Date.now()+864e5); f.value=t.toISOString().slice(0,10); f.min=new Date().toISOString().slice(0,10);
+  })();
+
+  async function onEsp(){
+    sel.especialidadId=val('especialidad'); sel.medicoId=''; sel.fechaHora='';
+    const med=document.getElementById('medico'); med.innerHTML='<option value="">Elegí un profesional…</option>';
+    stepOn('step2', !!sel.especialidadId); stepOn('step3',false); stepOn('step4',false); hideConfirm();
+    if(!sel.especialidadId) return;
+    const list=(await (await fetch(`${API}/medicos?especialidadId=${sel.especialidadId}`)).json()).data||[];
+    list.forEach(m=>{ const o=document.createElement('option');o.value=m.id;o.textContent=`${m.nombre} ${m.apellido}`;med.appendChild(o); });
+  }
+  function onMed(){ sel.medicoId=val('medico'); sel.fechaHora=''; stepOn('step3',!!sel.medicoId); if(sel.medicoId) loadSlots(); else {stepOn('step4',false);hideConfirm();} }
+
+  async function loadSlots(){
+    const box=document.getElementById('slots'); sel.fechaHora='';
+    if(!sel.medicoId){ return; } stepOn('step4',true); hideConfirm();
+    box.innerHTML='<span class="muted">Cargando horarios…</span>';
+    try{
+      const r=await (await fetch(`${API}/medicos/${sel.medicoId}/disponibilidad?fecha=${val('fecha')}`)).json();
+      const slots=r.data?.slots||[];
+      if(!slots.length){ box.innerHTML='<span class="muted">No hay horarios disponibles ese día. Probá otra fecha.</span>'; return; }
+      box.innerHTML='';
+      slots.forEach(s=>{ const b=document.createElement('button'); b.className='slot'; b.textContent=s.hora;
+        b.onclick=()=>{ document.querySelectorAll('.slot').forEach(x=>x.classList.remove('sel')); b.classList.add('sel'); sel.fechaHora=s.fechaHora; showConfirm(); };
+        box.appendChild(b); });
+    }catch(e){ box.innerHTML='<span class="muted">No se pudieron cargar los horarios.</span>'; }
+  }
+
+  function showConfirm(){ document.getElementById('confirmBox').style.display='block';
+    document.getElementById('loginHint').style.display= token?'none':'block';
+    document.getElementById('confirmBtn').textContent = token?'Confirmar turno':'Iniciá sesión para confirmar'; }
+  function hideConfirm(){ document.getElementById('confirmBox').style.display='none'; }
+
+  async function pedirTurno(){
+    const msg=document.getElementById('turnoMsg'); msg.className='msg';
+    if(!token){ openAuth('login'); return; }
+    if(!sel.fechaHora){ msg.className='msg err'; msg.textContent='Elegí un horario.'; return; }
+    msg.textContent='Reservando…'; document.getElementById('confirmBtn').disabled=true;
+    try{
+      const res=await fetch(`${API}/turnos`,{method:'POST',headers:auth(true),body:JSON.stringify({medicoId:Number(sel.medicoId),fechaHora:sel.fechaHora,motivo:val('motivo')})});
+      const data=await res.json().catch(()=>({}));
+      if(res.status===201){ msg.className='msg ok'; msg.textContent='¡Turno reservado! Te llegará un recordatorio por email un día antes.'; hideConfirm(); loadSlots(); loadMisTurnos(); }
+      else if(res.status===409){ msg.className='msg err'; msg.textContent='Ese horario se ocupó recién. Elegí otro.'; loadSlots(); }
+      else{ msg.className='msg err'; msg.textContent=data.detail||'No se pudo reservar.'; }
+    }catch(e){ msg.className='msg err'; msg.textContent='No se pudo conectar.'; }
+    finally{ document.getElementById('confirmBtn').disabled=false; }
+  }
+
+  // ---- Auth ----
+  function openAuth(m){ setAuthMode(m); document.getElementById('authOverlay').classList.add('open'); }
+  function closeAuth(){ document.getElementById('authOverlay').classList.remove('open'); document.getElementById('authMsg').textContent=''; clearErr(); }
+  function setAuthMode(m){ authMode=m; document.querySelectorAll('.tab2').forEach(t=>t.classList.toggle('active',t.dataset.m===m));
+    document.getElementById('regFields').style.display=m==='register'?'block':'none';
+    document.getElementById('authTitle').textContent=m==='register'?'Crear cuenta':'Ingresar';
+    document.getElementById('authBtn').textContent=m==='register'?'Crear cuenta':'Ingresar'; }
+  const EMAIL_RE=/^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+  async function submitAuth(){
+    clearErr(); const msg=document.getElementById('authMsg'); msg.className='msg';
+    const email=val('auEmail'), pass=val('auPass');
+    if(authMode==='register'){
+      let ok=true;
+      if(!val('auNombre')){ showErr('nombre','ingresá tu nombre'); ok=false; }
+      if(!EMAIL_RE.test(email)){ showErr('email','email inválido (nombre@mail.com)'); ok=false; }
+      const tel=val('auTel'); if(tel && (!/^[0-9()+\s-]+$/.test(tel)||tel.replace(/[^0-9]/g,'').length<8)){ showErr('telefono','teléfono inválido'); ok=false; }
+      if(pass.length<8||!/[A-Za-z]/.test(pass)||!/[0-9]/.test(pass)){ showErr('password','mín. 8, con letras y números'); ok=false; }
+      if(!ok){ msg.className='msg err'; msg.textContent='Revisá los campos.'; return; }
+    }
+    msg.textContent='Procesando…';
+    const body={email,password:pass};
+    let url=`${API}/auth/login`;
+    if(authMode==='register'){ url=`${API}/auth/register`; body.nombre=val('auNombre');body.apellido=val('auApellido');body.telefono=val('auTel');body.dni=val('auDni'); }
+    try{
+      const res=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      const data=await res.json().catch(()=>({}));
+      if((res.status===200||res.status===201)&&data.accessToken){ token=data.accessToken; me=data.user; onLogged(); closeAuth(); }
+      else if(res.status===422&&Array.isArray(data.errors)){ data.errors.forEach(e=>showErr(e.field,e.message)); msg.className='msg err'; msg.textContent='Revisá los campos.'; }
+      else if(res.status===401){ msg.className='msg err'; msg.textContent='Email o contraseña incorrectos.'; }
+      else if(res.status===409){ msg.className='msg err'; msg.textContent='Ya existe una cuenta con ese email.'; }
+      else{ msg.className='msg err'; msg.textContent=data.detail||'No se pudo completar.'; }
+    }catch(e){ msg.className='msg err'; msg.textContent='No se pudo conectar.'; }
+  }
+  function onLogged(){
+    document.getElementById('nav').innerHTML=`<span class="muted" style="font-size:.9rem">Hola, ${esc(me.nombre||me.email)}</span> <button class="btn ghost sm" onclick="logout()">Salir</button>`;
+    if(me.role==='admin') document.getElementById('nav').insertAdjacentHTML('afterbegin','<a class="btn ghost sm" href="/admin.html">Panel</a> ');
+    document.getElementById('misTurnosCard').style.display='block';
+    if(document.getElementById('confirmBox').style.display==='block') showConfirm();
+    loadMisTurnos();
+  }
+  function logout(){ token=null; me=null;
+    document.getElementById('nav').innerHTML=`<button class="btn ghost sm" onclick="openAuth('login')">Ingresar</button> <button class="btn sm" onclick="openAuth('register')">Crear cuenta</button>`;
+    document.getElementById('misTurnosCard').style.display='none'; if(document.getElementById('confirmBox').style.display==='block') showConfirm(); }
+
+  async function loadMisTurnos(){
+    if(!token) return; const box=document.getElementById('misTurnos');
+    try{
+      const list=(await (await fetch(`${API}/turnos?pageSize=20`,{headers:auth()})).json()).data||[];
+      if(!list.length){ box.innerHTML='<p class="empty">Sin turnos todavía.</p>'; return; }
+      box.innerHTML=list.map(t=>`<div class="turno">
+        <div style="display:flex;justify-content:space-between"><strong>${esc(t.medicoNombre)}</strong><span class="chip ${t.estado}">${t.estado}</span></div>
+        <div class="muted">${esc(t.especialidad)} · ${fmt(t.fechaHora)}</div>
+        ${['solicitado','confirmado'].includes(t.estado)?`<button class="btn ghost sm" style="margin-top:8px" onclick="cancelar(${t.id})">Cancelar</button>`:''}
+      </div>`).join('');
+    }catch(e){ box.innerHTML='<p class="empty">No se pudieron cargar.</p>'; }
+  }
+  async function cancelar(id){ if(!confirm('¿Cancelar este turno?'))return;
+    await fetch(`${API}/turnos/${id}`,{method:'DELETE',headers:auth()}); loadMisTurnos(); loadSlots(); }
+
+  // utils
+  function stepOn(id,on){ document.getElementById(id).classList.toggle('on',!!on); }
+  function auth(json){ const h=token?{'Authorization':'Bearer '+token}:{}; if(json)h['Content-Type']='application/json'; return h; }
+  function val(id){ return document.getElementById(id).value.trim(); }
+  function fmt(iso){ try{ return new Date(iso).toLocaleString('es-AR',{timeZone:'America/Argentina/Buenos_Aires',dateStyle:'medium',timeStyle:'short'}); }catch{return iso;} }
+  function showErr(f,m){ const e=document.querySelector(`.field-err[data-for="${f}"]`); if(e)e.textContent=m; }
+  function clearErr(){ document.querySelectorAll('.field-err').forEach(e=>e.textContent=''); }
+  function esc(s){ return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+</script>
+</body>
+</html>
